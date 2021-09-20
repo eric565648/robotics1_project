@@ -1,0 +1,3 @@
+[submodule "kinova-ros"]
+	path = kinova-ros
+	url = git@github.com:Kinovarobotics/kinova-ros.git
