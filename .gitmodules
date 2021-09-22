@@ -1,3 +1,0 @@
-[submodule "dev_ws/src/kinova-ros"]
-	path = dev_ws/src/kinova-ros
-	url = git@github.com:Kinovarobotics/kinova-ros.git
