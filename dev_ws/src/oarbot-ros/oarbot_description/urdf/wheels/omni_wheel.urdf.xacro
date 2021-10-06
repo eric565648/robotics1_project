@@ -8,7 +8,7 @@
   <xacro:property name="wheel_height" value="0.087" />
   <xacro:property name="wheel_mass" value="6.5" /> <!-- in kg-->
 
-  <xacro:macro name="cylinder_inertia" params="m r h">
+  <xacro:macro name="cylinder_inertial" params="m r h">
     <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
               iyy="${m*r*r/2}" iyz = "0"
               izz="${m*(3*r*r+h*h)/12}" />
@@ -30,13 +30,13 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <xacro:if value="${reflect}">
           <geometry>
-            <mesh filename="package://oarbot_description/meshes/wheels/omni_wheel_1.dae" />
+            <mesh filename="$(find oarbot_description)/meshes/wheels/omni_wheel_1.dae" />
           </geometry>
-          </xacro:if>
-          <xacro:unless value="${reflect}">
-            <geometry>
-              <mesh filename="package://oarbot_description/meshes/wheels/omni_wheel_2.dae" />
-            </geometry>
+        </xacro:if>
+        <xacro:unless value="${reflect}">
+          <geometry>
+            <mesh filename="$(find oarbot_description)/meshes/wheels/omni_wheel_2.dae" />
+          </geometry>
 		    </xacro:unless>
       </visual>
 
@@ -50,7 +50,9 @@
       <inertial>
         <mass value="${wheel_mass}" />
         <origin xyz="0 0 0" />
-        <cylinder_inertia  m="${wheel_mass}" r="${wheel_radius}" h="${wheel_height}" />
+        <inertia  ixx="${wheel_mass}*(3*${wheel_radius}*${wheel_radius}+${wheel_height}*${wheel_height})/12" ixy = "0" ixz = "0"
+              iyy="${wheel_mass}*${wheel_radius}*${wheel_radius}/2" iyz = "0"
+              izz="${wheel_mass}*(3*${wheel_radius}*${wheel_radius}+${wheel_height}*${wheel_height})/12" />
       </inertial>
     </link>
 
@@ -66,12 +68,12 @@
     </transmission>
 
     <gazebo reference="${prefix}_wheel_link">
-		<mu1 value="1.0"/>
-		<mu2 value="1.0"/>
-		<kp value="10000000.0" />
-		<kd value="1.0" />
-		<fdir1 value="1 0 0"/>
-        <turnGravityOff>false</turnGravityOff>
+      <mu1 value="1.0"/>
+      <mu2 value="1.0"/>
+      <kp value="10000000.0" />
+      <kd value="1.0" />
+      <fdir1 value="1 0 0"/>
+      <turnGravityOff>false</turnGravityOff>
     </gazebo>
 
   </xacro:macro>

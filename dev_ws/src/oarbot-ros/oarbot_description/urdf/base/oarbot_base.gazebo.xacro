@@ -8,8 +8,9 @@
 	      <odometryTopic>odom</odometryTopic>
 	      <odometryFrame>odom</odometryFrame>
 	      <odometryRate>50.0</odometryRate>
-	      <robotBaseFrame>base_footprint</robotBaseFrame>
+	      <robotBaseFrame>summit_base_footprint</robotBaseFrame>
 	      <publishTF>true</publishTF>
+	      <legacyModeNS>true</legacyModeNS>
 	    </plugin>
 	  </gazebo>
   </xacro:macro>
