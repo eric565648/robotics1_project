@@ -66,7 +66,7 @@
       <geometry>
         <box size="0.15 0.15 0.3"/>
       </geometry>
-      <origin rpy="0 0 0" xyz="0 0 0"/>
+      <origin rpy="0 0 0" xyz="0 0 -0.15"/>
       <material name="white"/>
     </visual>
     <collision>
@@ -80,12 +80,49 @@
         </inertial>
   </link>
 
-  <joint name="base_to_support" type="fixed">
+  <!-- <joint name="base_to_support" type="fixed">
     <parent link="summit_base_link"/>
     <child link="support"/>
     <origin xyz="-0.22 0 0.3"/>
+  </joint> -->
+
+  <joint name="base_to_support" type="prismatic">
+    <parent link="summit_base_link"/>
+    <child link="support"/>
+    <axis xyz="0 0 1"/>
+    <limit effort="1000.0" lower="0" upper="0.3" velocity="0.3"/>
+    <origin xyz="0.3 0 0.3"/>
   </joint>
 
+  <transmission name="support_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="base_to_support">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>  
+    <actuator name="lift_motor">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
+  <!-- <transmission name="support_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
+    <joint name="base_to_support">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+    </joint>  
+    <actuator name="lift_motor">
+      <hardwareInterface>hardware_interface/PositionJointInterface</hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission> -->
+
+    <gazebo>
+      <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+        <robotNamespace>summit_xl</robotNamespace>
+        <robotSimType>gazebo_ros_control/DefaultRobotHWSim</robotSimType>
+        <legacyModeNS>true</legacyModeNS>
+      </plugin>
+    </gazebo>
 
   </xacro:macro>
 

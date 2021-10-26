@@ -1,0 +1,19 @@
+summit_xl:
+  # publish all joint state
+  joint_state_controller:
+    type: joint_state_controller/JointStateController
+    publish_rate: 50
+  # Position Controller
+  joint_support_position_controller:
+    joint: base_to_support
+    type: effort_controllers/JointPositionController
+    pid:
+      d: 0
+      i: 80
+      p: 1000
+  # gazebo_ros_control:   
+  #   pid_gains:
+  #     base_to_support:
+  #       p: 5000.0
+  #       i: 0 
+  #       d: 0

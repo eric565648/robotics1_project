@@ -30,12 +30,12 @@
         <origin xyz="0 0 0" rpy="0 0 0" />
         <xacro:if value="${reflect}">
           <geometry>
-            <mesh filename="$(find oarbot_description)/meshes/wheels/omni_wheel_1.dae" />
+            <mesh filename="package://oarbot_description/meshes/wheels/omni_wheel_1.dae" />
           </geometry>
         </xacro:if>
         <xacro:unless value="${reflect}">
           <geometry>
-            <mesh filename="$(find oarbot_description)/meshes/wheels/omni_wheel_2.dae" />
+            <mesh filename="package://oarbot_description/meshes/wheels/omni_wheel_2.dae" />
           </geometry>
 		    </xacro:unless>
       </visual>
@@ -60,7 +60,7 @@
     <transmission name="${prefix}_wheel_joint_trans">
       <type>transmission_interface/SimpleTransmission</type>
       <joint name="${prefix}_wheel_joint" >
-        <hardwareInterface>hardware_interface/VelocityJointInterface</hardwareInterface>
+        <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
       </joint>
       <actuator name="${prefix}_wheel_joint_motor">
          <mechanicalReduction>1</mechanicalReduction>
