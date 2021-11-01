@@ -16,44 +16,207 @@ p89x = d4*(sin(aa)/sin(2*aa)) + 2*d4*(sin(aa)/sin(2*aa))*cos(2*aa);
 p89y = 2*d4*sin(aa);
 
 % initial angle
+q1=1; q2=1; q3=0; q4=0; q5=0; q6=0; q7=0; q8=0; q9=0; q10=0;
 q1=0; q2=0; q3=0; q4=0; q5=0; q6=0; q7=0; q8=0; q9=0; q10=0;
 
 % POE robot def
 robot.H = [ex ey ez ez ez ey -ey -ex [-sin(pi/6); cos(pi/6); 0] -ex];
-robot.P = [0*ex 0*ex 0*ex l1*ex+l2*ez 0*ex 0*ex d2*ez d3*ex+e2*ey p89x*ex-p89y*ey 0*ex d6*(sin(aa)/sin(2*aa))*ex];
+robot.P = [0*ex 0*ex 0*ex l1*ex+l2*ez 0*ex 0*ex d2*ez d3*ex+e2*ey p89x*ex-p89y*ey 0*ex (d6+d4*sin(aa)/sin(2*aa))*ex];
 robot.joint_type = [1 1 0 1 0 0 0 0 0 0];
 robot.q_zeros = [0 0 0 0 pi pi pi/2 0 0 0];
+
 robot.q = [q1 q2 q3 q4 q5 q6 q7 q8 q9 q10];
 
 robot = fwdkiniter(robot);
 
 % test fwd and Jacobian
 
+[robot_tree, col_body] = defineRobot(robot, 0.01);
+figure(1);show(robot_tree,(robot.q)','collision','on'); hold;
+
+% draw a convex shape as path
+x = [0.8, 3.5, 6.2];
+z = [1.11,1,1.11];
+p = polyfit(x,z,2);
+x_end = 7.5; z_end=p(1)*x_end*x_end + p(2)*x_end + p(3);
+N = 100;
+S_length = N+1;
+p_Sx = x(1):(x_end-x(1))/N:x_end;
+p_Sz = p(1)*p_Sx.*p_Sx + p(2)*p_Sx + p(3);
+p_S = [p_Sx; p_Sz];
+
+% make it equal length
+diffS=vecnorm(diff(p_S')');
+ls=[0 cumsum(diffS)];
+lf=sum(diffS);
+l=(0:lf/N:lf);
+
+pS=interp1(ls,p_S',l,'spline')';
+p_Ts=[pS(1,:);zeros(1,length(pS(1,:)));pS(2,:)];
+
+R_Ts = [];
+qua_Ts = [];
+for i=1:S_length
+    
+    eyt = [0;1;0];
+    
+    if i == S_length
+        ext = (p_Ts(:,i)-p_Ts(:,i-1));
+    else
+        ext = (p_Ts(:,i+1)-p_Ts(:,i));
+    end
+    
+    ext = ext - ext'*eyt*eyt;
+    ext = ext/norm(ext);
+    ezt = cross(ext,eyt);
+    
+    R = [ext,eyt,ezt];
+    q = quaternion_from_rotation(R);
+    
+    R_Ts = [R_Ts R];
+    qua_Ts = [qua_Ts q];
+end
+
+m=3;
+%figure(2);
+h=plotTransforms(p_Ts(:,1:m:end)',qua_Ts(:,1:m:end)');
+set(h,'LineWidth',1.5);
+
+ik = inverseKinematics('RigidBodyTree',robot_tree);
+
+all_sol = [];
+all_error = [];
+for i=1:S_length
+
+    T = [[R_Ts(:,3*i-2:3*i) p_Ts(:,i)];[0 0 0 1]];
+    robot.T = T;
+
+    if i==1
+        init_guess = [0 0 0 0 0 0 -pi/4 pi/6 pi/6 pi/6];
+    else
+        init_guess = all_sol(:,i-1)';
+    end
+
+    %robot = invkiniter(robot, init_guess', 500, 1, [1 1 1 1 1 1], 0.01, 2);
+    
+    [q,solnInfo]=...
+        ik('body11',T,[1 1 1 1 1 1],init_guess');
+    
+    % all_sol = [all_sol robot.q'];
+    all_sol = [all_sol q];
+    p_error = norm(robot.T(1:3,4)-T(1:3,4));
+    r_error = norm(robot.T(1:3,1:3)*T(1:3,1:3-eye(3)),'fro');
+    all_error = [all_error [r_error;p_error]];
+    i
+    T(3,4)
+    figure(1);view(0,10);axis([-1 7 -1 1 -1 2]);show(robot_tree,all_sol(:,i),'collision','on');
+end
+
+for i=1:N
+    % show robot pose (every m frames)
+    if mod(i,m)==0
+        robot.q = all_sol(:,i)';
+        robot = fwdkiniter(robot);
+        
+        figure(1);axis([-1 7 -1 1 -1 2]);show(robot_tree,all_sol(:,i),'collision','on'); 
+        pause(0.1);
+        view(0,10);
+    end
+end
+
+function robot=invkiniter(robotd, init_guess, N, alpha, weight, epis, type)
+
+    robot_i = robotd;
+    q = init_guess;
+    
+    for i=1:N
+        robot_i.q = q;
+        robot_i = fwdkiniter(robot_i);
+        
+        dX = weight'.*[s_err(robot_i.T(1:3,1:3)*robotd.T(1:3,1:3),type);(robot_i.T(1:3,4)-robotd.T(1:3,4))];
+        q = q-alpha*robot_i.J'*inv(robot_i.J*robot_i.J'+epis*eye(6))*dX;
+        % q = q-alpha*pinv(robot_i.J)*dX;
+        q=(q>=pi).*(-2*pi+q)+(q<-pi).*(2*pi+q)+(q<=pi).*(q>-pi).*q;
+    end
+    
+    robot = robotd;
+    robot.q = q';
+    robot = fwdkiniter(robot);
+    robot = robot;
+end
+
 function robot=fwdkiniter(robot)
 
     J = zeros(6, length(robot.q));
     T = eye(4);
     for i=1:length(robot.H)
-        if robot.joint_type(i) == 0 % revolute joint
+        
+        phi = [eye(3) zeros(3,3); -hat(T(1:3,1:3)*robot.P(:,i)) eye(3)];
+        
+        if robot.joint_type(i) < 1e-5 % revolute joint
             Ri = rot(robot.H(:,i), robot.q(i));
-            pi = robot.P(:,i);
-            T = T*homoT(Ri, pi);
+            p = robot.P(:,i);
+            T = T*homoT(Ri, p);
             
             Hi = [T(1:3,1:3)*robot.H(:,i); zeros(3,1)];
         else % prismatic joint
             Ri = eye(3);
-            pi = robot.P(:,i)+robot.H(:,i)*robot.q(i);
-            T = T*homoT(Ri, pi);
+            p = robot.P(:,i)+robot.H(:,i)*robot.q(i);
+            T = T*homoT(Ri, p);
             
             Hi = [zeros(3,1); T(1:3,1:3)*robot.H(:,i)];
         end
         
-        phi = [eye(3) zeros(3,3); -hat(T(1:3,1:3)*robot.P(:,i)) eye(3)];
+        
         J = phi*J + [zeros(6,i-1) Hi zeros(6,length(robot.H)-i)];
     end
     
+    % the last (fixed) joint
+    phi = [eye(3) zeros(3,3); -hat(T(1:3,1:3)*robot.P(:,end)) eye(3)];
+    Ri = eye(3);
+    p = robot.P(:,end);
+    T = T*homoT(Ri, p);
+    J = phi*J;
+    
     robot.T = T;
     robot.J = J;
+end
+
+function err = s_err(er_mat, type)
+
+    qua = quaternion_from_rotation(er_mat);
+    qk = angle_axis_from_rotation(er_mat);
+    if type == 1
+        err = 4*qua(1)*qua(2:4);
+    elseif type == 2
+        err = 2*qua(2:4);
+    elseif type == 3
+        err = 2*qk(1)*qk(2:4);
+    else
+        error("Type is a interger of 1, 2 or 3");
+    end
+
+end
+
+function q = quaternion_from_rotation(R)
+    qw = sqrt(1+R(1,1)+R(2,2)+R(3,3))/2;
+    qx = (R(3,2)-R(2,3))/(4*qw);
+    qy = (R(1,3)-R(3,1))/(4*qw);
+    qz = (R(2,1)-R(1,2))/(4*qw);
+
+    q = [qw; qx; qy; qz];
+end
+
+function qk = angle_axis_from_rotation(R)
+
+    k_ = [R(3,2)-R(2,3); R(1,3)-R(3,1); R(2,1)-R(1,2)];
+    k = k_/norm(k_);
+
+    sinq = k_(1)/k(1);
+    cosq = (R(1,1)+R(2,2)+R(3,3)-1)/2;
+    q = atan2(sinq,cosq);
+
+    qk = [q;k];
 end
 
 function T = homoT(R, p)
