@@ -1,2 +1,4 @@
 dev_ws/build
 dev_ws/devel
+*.DS_Store
+*.asv
