@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+  <arg name="rvizconfig" default="$(find oarbot_description)/rviz/oarbot.rviz" />
+
+  <!-- Load the URDF into ROS parameter server -->
+  <param name="robot_description" command="$(find xacro)/xacro '$(find oarbot_description)/robot/oarbot.urdf.xacro'" />
+
+  <node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <rosparam param="source_list">["to_joint_states"]</rosparam>
+  </node>
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
+  <node name="oarbot_world" pkg="oarbot_description" type="rviz_world.py" />
+  <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
+
+</launch>
+
