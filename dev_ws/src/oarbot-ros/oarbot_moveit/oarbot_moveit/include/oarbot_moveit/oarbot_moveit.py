@@ -53,17 +53,22 @@ class Oarbot(object):
 
         # start qp
         now_T = self.fwdkin(q)
-        dX = np.reshape(np.append(self.s_err(now_T.R*end_T.R.T), now_T.p-end_T.p),(6,1))
+        dX = np.reshape(np.append(self.s_err(now_T.R*end_T.R.T,2), now_T.p-end_T.p),(6,1))
         umax = (self.bot.joint_upper_limit-q)/alpha
         umin = (self.bot.joint_lower_limit-q)/alpha
 
-        A = np.vstack((-np.eye(10), np.eye(10)))
-        b = np.reshape(np.append(-umax, umin),(20,1))
-        J = self.jacobian(q)
-        H = J.T*J
-        f = Kp*J.T*dX
+        upper = np.array([1,1,2*pi,1,2*pi,2*pi,2*pi,2*pi,2*pi,2*pi])
 
-        sc = norm(Q,'fro')
+        umax = np.multiply((umax>upper),upper)+np.multiply((umax<=upper),umax)
+        umin = np.multiply((umin<-upper),-upper)+np.multiply((umin>=-upper),umin)
+
+        A = np.vstack((-np.eye(10), np.eye(10)))
+        b = np.reshape(np.append(-umax, umin),(20,))
+        J = self.jacobian(q)
+        H = np.matmul(J.T,J) + 0.00001*np.eye(10) # make sure the matrix is positive definite.
+        f = Kp*np.matmul(J.T,dX).flatten()
+
+        sc = norm(H,'fro')
         qp_sln = qp.solve_qp(H/sc, -f/sc, A.T, b)[0]
         q = q+alpha*qp_sln
 
@@ -75,11 +80,11 @@ class Oarbot(object):
         qua = rox.R2q(er_mat)
         qk = rox.R2rot(er_mat)
         if type == 1:
-            err = 4*qua[0]*qua[2:4]
+            err = 4*qua[0]*qua[1:4]
         elif type == 2:
-            err = 2*qua[2:4]
+            err = 2*qua[1:4]
         elif type == 3:
-            err = 2*qk[1]*qk[2:4]
+            err = 2*qk[1]*qk[1:4]
         else:
             raise ValueError("Type = 1 or 2 or 3")
         
