@@ -33,6 +33,11 @@ class Oarbot(object):
         self.bot = rox.Robot(H,P,joint_type,joint_lower_limit,joint_upper_limit)
         self.q_zeros = np.array([0,0,0,0,pi,pi,pi/2,0,0,0])
 
+        # opt param
+        self._ep = 0.01
+        self._er = 0.02
+        self._n = 10
+
     def fwdkin(self,q):
         
         # foward kinematics for oarbot
@@ -63,17 +68,59 @@ class Oarbot(object):
         umin = np.multiply((umin<-upper),-upper)+np.multiply((umin>=-upper),umin)
 
         A = np.vstack((-np.eye(10), np.eye(10)))
+        # b = np.reshape(np.append(-umax, umin),(20,))
         b = np.reshape(np.append(-umax, umin),(20,))
         J = self.jacobian(q)
-        H = np.matmul(J.T,J) + 0.00001*np.eye(10) # make sure the matrix is positive definite.
+        # H = np.matmul(J.T,J) + 0.00001*np.eye(10) # make sure the matrix is positive definite.
+        H = np.matmul(J.T,J) + 0.0000001*np.eye(10)
+        # H = (H+H.T)/2
         f = Kp*np.matmul(J.T,dX).flatten()
+
+        # H = self.getqp_H(J,dX[0:3],dX[3:6])
+        # H = 0.5*(H+H.T)+0.0000001*np.eye(self._n+2)
+        # f = self.getqp_f()
+        # f = f.reshape((self._n+2,))
+        # umax = np.append(np.multiply((umax>upper),upper)+np.multiply((umax<=upper),umax),[1,1])
+        # umin = np.append(np.multiply((umin<-upper),-upper)+np.multiply((umin>=-upper),umin),[-1,-1])
+        # A = np.vstack((-np.eye(12), np.eye(12)))
+        # b = np.reshape(np.append(-umax, umin),(24,))
 
         sc = norm(H,'fro')
         qp_sln = qp.solve_qp(H/sc, -f/sc, A.T, b)[0]
-        q = q+alpha*qp_sln
+        q = q+alpha*qp_sln[0:self._n]
 
         return q
+    
+    def inequality_bound(self, h):
+        sigma = np.zeros((h.shape))
+        h2 = h - self._eta
+        sigma[np.array(h2 >= self._epsilon)] = -np.tan(self._c*np.pi/2)
+        sigma[np.array(h2 >= 0) & np.array(h2 < self._epsilon)] = -np.tan(self._c*np.pi/2/self._epsilon*h2[np.array(h2 >= 0) & np.array(h2 < self._epsilon)])
+        sigma[np.array(h >= 0) & np.array(h2 < 0)] = -self._E*h2[np.array(h >= 0) & np.array(h2 < 0)]/self._eta
+        sigma[np.array(h < 0)] = self._E
 
+        return sigma
+
+    def getqp_f(self):
+        f = -2*np.array([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, self._er, self._ep]).reshape(self._n+2, 1)
+
+        return f
+
+    def getqp_H(self, J, vr, vp):
+        H1 = np.dot(np.hstack((J,np.zeros((6,2)))).T,np.hstack((J,np.zeros((6,2)))))
+
+        tmp = np.vstack((np.hstack((np.hstack((np.zeros((3, self._n)),vr)),np.zeros((3,1)))),np.hstack((np.hstack((np.zeros((3,self._n)),np.zeros((3,1)))),vp)))) 
+        H2 = np.dot(tmp.T,tmp)
+
+        H3 = -2*np.dot(np.hstack((J,np.zeros((6,2)))).T, tmp)
+        H3 = (H3+H3.T)/2
+
+        tmp2 = np.vstack((np.array([0,0,0,0,0,0,0,0,0,0,np.sqrt(self._er),0]),np.array([0,0,0,0,0,0,0,0,0,0,0,np.sqrt(self._ep)])))
+        H4 = np.dot(tmp2.T, tmp2)
+
+        H = 2*(H1+H2+H3+H4)
+
+        return H
 
     def s_err(self,er_mat,type):
         
