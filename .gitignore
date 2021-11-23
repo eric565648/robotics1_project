@@ -3,3 +3,5 @@ dev_ws/devel
 *.DS_Store
 *.asv
 *.pyc
+*.cpython-38.pyc
+dev_ws/src/oarbot-ros/oarbot_moveit/oarbot_moveit/include/oarbot_moveit/__pycache__/

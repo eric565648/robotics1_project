@@ -9,7 +9,7 @@ from visualization_msgs.msg import Marker, MarkerArray
 from oarbot_msgs.msg import OarbotJointState
 from oarbot_moveit.oarbot_moveit import Oarbot
 from std_srvs.srv import Trigger, TriggerResponse
-from math import pi
+from math import pi, cos, sin
 
 
 class Motion(object):
