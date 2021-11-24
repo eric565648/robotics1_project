@@ -9,125 +9,41 @@ zz=zeros(3,1); ex = [1;0;0]; ey = [0;1;0]; ez = [0;0;1];
 % parameters
 wheel_r = 0.127;
 d1 = 0.2755;
-l1=0.3; l2=wheel_r+0.3+d1;
 d2 = 0.41; d3=0.2073; e2=0.0098; d4=0.0741; d5=d4; d6=0.16;
 aa = pi/6;
 p89x = d4*(sin(aa)/sin(2*aa)) + 2*d4*(sin(aa)/sin(2*aa))*cos(2*aa);
 p89y = 2*d4*sin(aa);
 
 % initial angle
-q1=1; q2=1; q3=0; q4=0; q5=0; q6=0; q7=0; q8=0; q9=0; q10=0;
-q1=0; q2=0; q3=0; q4=0; q5=0; q6=0; q7=0; q8=0; q9=0; q10=0;
+q1=0; q2=0; q3=0; q4=0; q5=0; q6=0;
 
 % POE robot def
-robot.H = [ex ey ez ez ez ey -ey -ex [-sin(pi/6); cos(pi/6); 0] -ex];
-robot.P = [0*ex 0*ex 0*ex l1*ex+l2*ez 0*ex 0*ex d2*ez d3*ex+e2*ey p89x*ex-p89y*ey 0*ex (d6+d4*sin(aa)/sin(2*aa))*ex];
-robot.joint_type = [1 1 0 1 0 0 0 0 0 0];
-robot.joint_upper_limit = [100 100 100 0.5 deg2rad([10000 130 180 10000 10000 10000])];
-robot.joint_lower_limit = [-100 -100 -100 0 deg2rad([-10000 -130 -71 -10000 -10000 -10000])];
-robot.q_zeros = [0 0 0 0 pi pi pi/2 0 0 0];
+robot.H = [ez ey -ey -ex [-sin(pi/6); cos(pi/6); 0] -ex];
+robot.P = [d1*ez 0*ez d2*ez+e2*ey 0*ex (p89x+d3)*ex-p89y*ey 0*ex (d6+d4*sin(aa)/sin(2*aa))*ex];
+robot.joint_type = [0 0 0 0 0 0];
+robot.joint_upper_limit = deg2rad([10000 130 90 10000 10000 10000]);
+robot.joint_lower_limit = deg2rad([-10000 -130 -71 -10000 -10000 -10000]);
+robot.q_zeros = [pi pi pi/2 0 0 0];
 
-robot.q = [q1 q2 q3 q4 q5 q6 q7 q8 q9 q10];
-
+q1 = 0.1; q2=deg2rad(rand*260-130); q3=deg2rad(rand*161-71); q4=rand*2*pi-pi; q5=rand*2*pi-pi; q6=rand*2*pi-pi;
+robot.q = [q1 q2 q3 q4 q5 q6];
 robot = fwdkiniter(robot);
 
 % test fwd and Jacobian
 
 [robot_tree, col_body] = defineRobot(robot, 0.01);
-figure(1);show(robot_tree,(robot.q)','collision','on'); hold;
+figure(1);show(robot_tree,(robot.q)','collision','on');
 
-% draw a convex shape as path
-x = [0.8, 3.5, 6.2];
-z = [1.11,1.5,1.11];
-p = polyfit(x,z,2);
-x_end = 7.5; z_end=p(1)*x_end*x_end + p(2)*x_end + p(3);
-N = 300;
-S_length = N+1;
-p_Sx = x(1):(x_end-x(1))/N:x_end;
-p_Sz = p(1)*p_Sx.*p_Sx + p(2)*p_Sx + p(3);
-p_S = [p_Sx; p_Sz];
+Td = robot.T;
 
-% make it equal length
-diffS=vecnorm(diff(p_S')');
-ls=[0 cumsum(diffS)];
-lf=sum(diffS);
-l=(0:lf/N:lf);
+init_guess = [0 0 0 0 0 0];
+%robot = invkiniter(robot, init_guess, 100, 1, [5 5 5 1 1 1], 0.01, 2);
+robot = invkinqp(robot, init_guess, 100, 1, 0.01, 0.1, 2);
+figure(2);show(robot_tree,(robot.q)','collision','on');
 
-pS=interp1(ls,p_S',l,'spline')';
-p_Ts=[pS(1,:);zeros(1,length(pS(1,:)));pS(2,:)];
+Tt = robot.T;
 
-R_Ts = [];
-qua_Ts = [];
-for i=1:S_length
-    
-    eyt = [0;1;0];
-    
-    if i == S_length
-        ext = (p_Ts(:,i)-p_Ts(:,i-1));
-    else
-        ext = (p_Ts(:,i+1)-p_Ts(:,i));
-    end
-    
-    ext = ext - ext'*eyt*eyt;
-    ext = ext/norm(ext);
-    ezt = cross(ext,eyt);
-    
-    R = [ext,eyt,ezt];
-    q = quaternion_from_rotation(R);
-    
-    R_Ts = [R_Ts R];
-    qua_Ts = [qua_Ts q];
-end
-
-m=3;
-%figure(2);
-h=plotTransforms(p_Ts(:,1:m:end)',qua_Ts(:,1:m:end)');
-set(h,'LineWidth',1.5);
-
-ik = inverseKinematics('RigidBodyTree',robot_tree);
-
-all_sol = [];
-all_error = [];
-for i=1:S_length
-
-    T = [[R_Ts(:,3*i-2:3*i) p_Ts(:,i)];[0 0 0 1]];
-    robot.T = T;
-
-    if i==1
-        init_guess = [0 0 0 0 0 0 0 pi/6 pi/6 pi/6];
-    else
-        init_guess = all_sol(:,i-1)';
-    end
-
-    %robot = invkiniter(robot, init_guess, 100, 1, [5 5 5 1 1 1], 0.01, 2);
-    robot = invkinqp(robot, init_guess, 1, 1, 0.01, 1, 2);
-    
-%     [q,solnInfo]=...
-%        ik('body11',T,[1 1 1 1 1 1],init_guess');
-    
-    all_sol = [all_sol robot.q'];
-%     all_sol = [all_sol q];
-    error_T = norm(robot.T-T,'fro');
-    all_error = [all_error error_T];
-    %figure(1);view(0,10);axis([-1 10 -1 1 -1 2]);show(robot_tree,all_sol(:,i),'collision','on');
-end
-
-for i=1:N
-    % show robot pose (every m frames)
-    if mod(i,m)==0
-        robot.q = all_sol(:,i)';
-        robot = fwdkiniter(robot);
-        
-        figure(1);axis([-1 9 -1 1 -1 2]);show(robot_tree,all_sol(:,i),'collision','on'); 
-        pause(0.1);
-        view(0,10);
-    end
-end
-
-figure(2)
-plot(all_error, '*');
-title('Accracy of Method');
-ylabel('Forbenius error'); xlabel('index'); grid;
+norm(Tt-Td,'fro')
 
 function robot = invkinqp(robotd, init_guess, N, alpha, epis, Kp, type)
     
@@ -141,12 +57,12 @@ function robot = invkinqp(robotd, init_guess, N, alpha, epis, Kp, type)
         umax = (robot_i.joint_upper_limit-robot_i.q)'/alpha;
         umin = (robot_i.joint_lower_limit-robot_i.q)'/alpha;
         
-        upper = [1,1,2*pi,1,2*pi,2*pi,2*pi,2*pi,2*pi,2*pi]';
+        upper = [2*pi,2*pi,2*pi,2*pi,2*pi,2*pi]';
         
         umax = (umax>upper).*(upper)+(umax<=upper).*umax;
         umin = (umin<-upper).*(-upper)+(umin>=-upper).*umin;
         
-        A = [diag(ones(10,1));diag(-1*ones(10,1))];
+        A = [diag(ones(6,1));diag(-1*ones(6,1))];
         b = [umax; -umin];
 
         opt = optimset('display','off');
@@ -154,8 +70,7 @@ function robot = invkinqp(robotd, init_guess, N, alpha, epis, Kp, type)
         u = quadprog(robot_i.J'*robot_i.J,Kp*robot_i.J'*dX,A,b,[],[],[],[],q,opt);
         %u = quadprog(robot_i.J'*robot_i.J,Kp*robot_i.J'*dX,[],[],[],[],[],[],q,opt);
         q = q+alpha*u;
-        q(5:10)=(q(5:10)>=2*pi).*(-2*pi+q(5:10))+(q(5:10)<0).*(2*pi+q(5:10))+(q(5:10)<2*pi).*(q(5:10)>=0).*q(5:10);
-        q(3)=(q(3)>=2*pi).*(-2*pi+q(3))+(q(3)<0).*(2*pi+q(3))+(q(3)<2*pi).*(q(3)>=0).*q(3);
+        q=(q>pi).*(-2*pi+q)+(q<-pi).*(2*pi+q)+(q<=pi).*(q>-pi).*q;
     end
     robot = robotd;
     robot.q = q';
