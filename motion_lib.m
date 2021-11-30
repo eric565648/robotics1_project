@@ -1,5 +1,6 @@
 % initialization
-clear all; close all;
+ close all;
+%  clear all;
 
 oarbot_param;
 
@@ -9,10 +10,15 @@ sr = rand*0.35 + 0.3;stheta = rand*deg2rad(150)-deg2rad(60);
 sp = rand*deg2rad(180)-deg2rad(90);sh = rand*0.5;
 er = rand*0.35 + 0.3;etheta = rand*deg2rad(150)-deg2rad(60);
 ep = rand*deg2rad(180)-deg2rad(90);eh = rand*0.5;
-exp_r = rand*2-3;
-arm_speed = rand-1;
-vel_type=1;
-base_speed=rand;
+exp_r = rand-2;
+arm_speed = rand-2;
+vel_type=randi([1,6]);
+base_speed=rand*2-2;
+
+disp([sr stheta sp sh])
+disp([er etheta ep eh])
+disp(exp_r)
+disp([arm_speed vel_type base_speed])
 
 % testing
 % sr = 0.5; er=0.5;
@@ -24,41 +30,39 @@ base_speed=rand;
 param = [sr stheta sp sh er etheta ep eh exp_r vel_type arm_speed base_speed];
 [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,etheta,ep,eh,exp_r,vel_type,arm_speed,base_speed);
 
-m = int16(length(pathp_d(1,:))/20);
-figure(1);h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3);
-view(43,16);
+% m = int16(length(pathp_d(1,:))/20);
+% figure(1);h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3);
+% view(43,16);
 
-err = [];
+disp([sr stheta sp sh])
+disp([er etheta ep eh])
+disp(exp_r)
+disp([arm_speed vel_type base_speed])
 
-tic
-for i=1:length(path(1,:))
-    % show robot pose (every 5 frames)
-%     robot.q = path(:,i)';
-%     robot = fwdkiniter(robot);
-%     dif = norm(robot.T-Transform(q2R(pathq_d(:,i)),pathp_d(:,i)),'fro');
-%     err = [err dif];
-%     if mod(i,1)==0
-    figure(1);show(robot_tree,path(:,i),'collision','on','PreservePlot',0,'FastUpdate',1);
-    %figure(1);show(robot_tree,[0 0 0 0 0 0 0 -2.5261   -0.6155 0]','collision','on');
-    %hold on; h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3); hold off;
-    view(43,16);axis([0 5 -0.5 0.5 0 2]);
-%     view(88,11);axis([0 1.5 -0.5 0.5 0 1.5]);
-%     pause(0.2);
-%     end
+if ~isempty(path)
+    tic
+    for i=1:length(path(1,:))
+        figure(1);show(robot_tree,path(:,i),'collision','on','PreservePlot',0,'FastUpdate',1);
+        %figure(1);show(robot_tree,[0 0 0 0 0 0 0 -2.5261   -0.6155 0]','collision','on');
+        %hold on; h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3); hold off;
+        view(43,16);axis([0 10 -0.5 0.5 0 2]);
+    %     view(88,11);axis([0 1.5 -0.5 0.5 0 1.5]);
+    %     pause(0.2);
 
-%     if i>1
-%         diff_q = path(5:end,i)-path(5:end,i-1);
-%         for j=1:length(diff_q)
-%             diff_q(j)=inpi(diff_q(j));
-%         end
-%         disp(diff_q);
-%         if abs(diff_q(4))>1
-%             %pause(10);
-%         end
-%     end
+    %     if i>1
+    %         diff_q = path(5:end,i)-path(5:end,i-1);
+    %         for j=1:length(diff_q)
+    %             diff_q(j)=inpi(diff_q(j));
+    %         end
+    %         disp(diff_q);
+    %         if abs(diff_q(4))>1
+    %             %pause(10);
+    %         end
+    %     end
+    end
+    toc
+    disp(length(path(1,:))*0.02)
 end
-toc
-disp(length(path(1,:)))
 
 % figure(2)
 % plot(err, '*');
@@ -77,7 +81,8 @@ function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,et
     N = norm(epoint-spoint)*50;
     
     exp_r = 10^exp_r;
-    arm_speed = 10^arm_speed*2;
+    arm_speed = 10^arm_speed;
+    base_speed = 10^base_speed;
     
 
     path_p = [spoint];
@@ -119,7 +124,7 @@ function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,et
     low_vel = 0.75;
     high_vel = 1+(1-low_vel);
     if vel_type == 1
-        path_type_p = path_vel_p;
+        path_type_p = path_vel_p(:,1:total_N);
     elseif vel_type==2 || vel_type==3
         if vel_type==2
             vel_1=high_vel;vel_2=low_vel;
@@ -226,11 +231,21 @@ function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,et
         
         sup_h = (eh-sh)/path_N*i+sh;
         bx = base_speed*s_rate*(i-1);
-        if isempty(qbot)
+        if isempty(qbot) || sum(isnan(qbot))
             disp('No solution')
             path=[];
             break;
         end
+        if i>1
+%             abs((qbot-path(5:end,end)))/s_rate
+%             armbot.joint_vel_limit
+            if sum(abs((qbot-path(5:end,end)))/s_rate > armbot.joint_vel_limit)
+                disp('Joint too fast')
+                path=[];
+                break;
+            end
+        end
+        
         q = [bx 0 0 sup_h qbot'];
         path = [path q'];
         disp('');
@@ -241,6 +256,7 @@ end
 function qans=invAly(robot,pT,pitch,last)
 
     q = [];
+    qans=[];
 
     d = norm(pT-robot.P(:,1));
     p2 = robot.P(:,3);

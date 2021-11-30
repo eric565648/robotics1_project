@@ -13,5 +13,6 @@ armbot.P = [d1*ez 0*ez d2*ez+e2*ey 0*ex (p89x+d3)*ex-p89y*ey 0*ex (d6+d4*sin(aa)
 armbot.joint_type = [0 0 0 0 0 0];
 armbot.joint_upper_limit = deg2rad([120 130 90 10000 10000 10000]);
 armbot.joint_lower_limit = deg2rad([-120 -130 -71 -10000 -10000 -10000]);
+armbot.joint_vel_limit = deg2rad([36 36 36 48 48 48]);
 armbot.home = [0 0 0 pi/6 -pi/6 0];
 armbot.P4T = (p89x+d3)*ex;
