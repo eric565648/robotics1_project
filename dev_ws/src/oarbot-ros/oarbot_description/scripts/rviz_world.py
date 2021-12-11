@@ -3,7 +3,6 @@
 import rospy
 import tf2_ros
 from geometry_msgs.msg import PoseStamped,TransformStamped
-from tf2_ros.transform_listener import TransformListener
 
 class baseState(object):
     def __init__(self) -> None:
@@ -20,7 +19,7 @@ class baseState(object):
         self.now_t.transform.rotation.w = 1
 
         # timer
-        self.timer = rospy.Timer(rospy.Duration(0.01),self.tf_timer)
+        self.timer = rospy.Timer(rospy.Duration(0.03),self.tf_timer)
 
     def tf_timer(self, event):
         
@@ -35,10 +34,11 @@ class baseState(object):
         t = TransformStamped()
         t.header = msg.header
         t.header.frame_id = "world"
-        t.child_frame_id = "summit_base_footprint"
+        # t.child_frame_id = "summit_base_footprint"
+        t.child_frame_id = "summit_base_link"
         t.transform.translation.x = msg.pose.position.x
         t.transform.translation.y = msg.pose.position.y
-        t.transform.translation.z = msg.pose.position.z
+        t.transform.translation.z = msg.pose.position.z+0.127
         t.transform.rotation = msg.pose.orientation
         self.now_t = t
 

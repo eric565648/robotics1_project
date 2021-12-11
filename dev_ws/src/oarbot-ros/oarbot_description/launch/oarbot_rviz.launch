@@ -12,9 +12,12 @@
   </node>
   <node unless="$(arg joint_gui)" name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
     <rosparam param="source_list">["to_joint_states"]</rosparam>
+    <param name="rate" value="50" />
   </node>
-  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" />
-  <node name="oarbot_world" pkg="oarbot_description" type="rviz_world.py" />
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" >
+    <!-- <param name="publish_frequency" value="50" /> -->
+  </node>
+  <!-- <node name="oarbot_world" pkg="oarbot_description" type="rviz_world.py" /> -->
   <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" />
 
 </launch>

@@ -11,12 +11,12 @@
 
 	<!-- BASE FOOTPRINT -->
 		<link name="summit_base_footprint">
-		  <visual>
+		  <!-- <visual>
 			  <origin xyz="0 0 0" rpy="0 0 0" />
 			  <geometry>
 				 <box size="0.001 0.001 0.001" />
 			  </geometry>
-		  </visual>
+		  </visual> -->
       
 		</link>
 
@@ -64,7 +64,7 @@
   <link name="support">
     <visual>
       <geometry>
-        <box size="0.15 0.15 0.3"/>
+        <box size="0.15 0.15 0.5"/>
       </geometry>
       <origin rpy="0 0 0" xyz="0 0 -0.15"/>
       <material name="white"/>
