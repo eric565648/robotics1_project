@@ -6,70 +6,46 @@ oarbot_param;
 
 kinova_param;
 
-sr = rand*0.35 + 0.3;stheta = rand*deg2rad(150)-deg2rad(60);
-sp = rand*deg2rad(180)-deg2rad(90);sh = rand*0.5;
-er = rand*0.35 + 0.3;etheta = rand*deg2rad(150)-deg2rad(60);
-ep = rand*deg2rad(180)-deg2rad(90);eh = rand*0.5;
-exp_r = rand-2;
-arm_speed = rand-2;
-vel_type=randi([1,6]);
-base_speed=rand*2-2;
+dataN=1000;
+paramM=[];
 
-disp([sr stheta sp sh])
-disp([er etheta ep eh])
-disp(exp_r)
-disp([arm_speed vel_type base_speed])
+i=1;
+while i<=dataN
 
-% testing
-% sr = 0.5; er=0.5;
-% stheta = deg2rad(-45);etheta = deg2rad(45);
-% sp = deg2rad(-45);ep = deg2rad(45);
-%sp=deg2rad(-45); ep=deg2rad(45); 
-%%%%
+    sr = rand*0.35 + 0.3;stheta = rand*deg2rad(150)-deg2rad(60);
+    sp = rand*deg2rad(180)-deg2rad(90);sh = rand*0.3; shand=rand;
+    er = rand*0.35 + 0.3;etheta = rand*deg2rad(150)-deg2rad(60);
+    ep = rand*deg2rad(180)-deg2rad(90);eh = rand*0.3; ehand=rand;
+    exp_r = rand-2;
+    arm_speed = rand-2;
+    vel_type=randi([1,6]);
+    base_speed=rand*2-2;
 
-param = [sr stheta sp sh er etheta ep eh exp_r vel_type arm_speed base_speed];
-[path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,etheta,ep,eh,exp_r,vel_type,arm_speed,base_speed);
+%     disp([sr stheta sp sh])
+%     disp([er etheta ep eh])
+%     disp(exp_r)
+%     disp([arm_speed vel_type base_speed])
 
-% m = int16(length(pathp_d(1,:))/20);
-% figure(1);h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3);
-% view(43,16);
+    [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,shand,er,etheta,ep,eh,ehand,exp_r,vel_type,arm_speed,base_speed);
 
-disp([sr stheta sp sh])
-disp([er etheta ep eh])
-disp(exp_r)
-disp([arm_speed vel_type base_speed])
-
-if ~isempty(path)
-    tic
-    for i=1:length(path(1,:))
-        figure(1);show(robot_tree,path(:,i),'collision','on','PreservePlot',0,'FastUpdate',1);
-        %figure(1);show(robot_tree,[0 0 0 0 0 0 0 -2.5261   -0.6155 0]','collision','on');
-        %hold on; h=plotTransforms(pathp_d(:,1:m:end)',pathq_d(:,1:m:end)','FrameSize',0.3); hold off;
-        view(43,16);axis([0 10 -0.5 0.5 0 2]);
-    %     view(88,11);axis([0 1.5 -0.5 0.5 0 1.5]);
-    %     pause(0.2);
-
-    %     if i>1
-    %         diff_q = path(5:end,i)-path(5:end,i-1);
-    %         for j=1:length(diff_q)
-    %             diff_q(j)=inpi(diff_q(j));
-    %         end
-    %         disp(diff_q);
-    %         if abs(diff_q(4))>1
-    %             %pause(10);
-    %         end
-    %     end
+    if ~isempty(path)
+%         tic
+%         for k=1:length(path(1,:))
+%             qbot=path(1:end-1,k);
+%             figure(1);show(robot_tree,qbot,'collision','on','PreservePlot',0,'FastUpdate',1);
+%             view(43,16);axis([0 10 -0.5 0.5 0 2]);
+%         end
+%         toc
+%         disp(length(path(1,:))*0.02)
+        paramM = [paramM;sr,stheta,sp,sh,shand,er,etheta,ep,eh,ehand,exp_r,vel_type,arm_speed,base_speed];
+        writematrix(path,'motion_data_test/'+string(i)+'.csv');
+        fprintf('Number %s\n',num2str(i));
+        i=i+1;
     end
-    toc
-    disp(length(path(1,:))*0.02)
 end
+writematrix(paramM,'motion_data/data_param.csv');
 
-% figure(2)
-% plot(err, '*');
-% title('Accracy of Method');
-% ylabel('Forbenius error'); xlabel('index'); grid;
-
-function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,etheta,ep,eh,exp_r,vel_type,arm_speed,base_speed)
+function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,shand,er,etheta,ep,eh,ehand,exp_r,vel_type,arm_speed,base_speed)
 
     %N = 50; % TODO should related to velocity
     s_rate = 0.02; % sampling rate
@@ -113,6 +89,11 @@ function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,et
         end
     end
     
+    if length(path_vel_p(1,:)) <= 50
+        disp('Weird short path problem')
+        path=[];pathp_d=[];pathq_d=[];
+        return;
+    end
     path_type_p = [];
     total_T = length(path_vel_p)*s_rate;
     if total_T > 10 % at most 10 sec of a motion
@@ -226,27 +207,29 @@ function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,er,et
         if i==1
             qbot = invAly(armbot,arm_p,arm_pitch,[]);
         else
-            qbot = invAly(armbot,arm_p,arm_pitch,path(5:end,end));
+            qbot = invAly(armbot,arm_p,arm_pitch,path(5:10,end));
         end
         
         sup_h = (eh-sh)/path_N*i+sh;
+        sup_hand = (ehand-shand)/path_N*i+shand;
+        sup_h = (eh-sh)/path_N*i+sh;
         bx = base_speed*s_rate*(i-1);
         if isempty(qbot) || sum(isnan(qbot))
-            disp('No solution')
+%             disp('No solution')
             path=[];
             break;
         end
         if i>1
 %             abs((qbot-path(5:end,end)))/s_rate
 %             armbot.joint_vel_limit
-            if sum(abs((qbot-path(5:end,end)))/s_rate > armbot.joint_vel_limit)
-                disp('Joint too fast')
+            if sum(abs((qbot-path(5:10,end)))/s_rate > armbot.joint_vel_limit)
+%                 disp('Joint too fast')
                 path=[];
                 break;
             end
         end
         
-        q = [bx 0 0 sup_h qbot'];
+        q = [bx 0 0 sup_h qbot' sup_hand];
         path = [path q'];
         disp('');
     end
@@ -303,26 +286,28 @@ function qans=invAly(robot,pT,pitch,last)
 %     if length(q(1,:))>1
 %         disp("more than one ans");
 %     end
-    
-    if isempty(last) ~= 1
-        qi = 1;
-        sm=norm(q(:,qi)-last);
-        for i=1:length(q(1,:))
-            diffq = q(:,i)-last;
-            for j=1:length(diffq)
-                diffq(j)=inpi(diffq(j));
+
+    if isempty(q) ~= 1
+        if isempty(last) ~= 1
+            qi = 1;
+            sm=norm(q(:,qi)-last);
+            for i=1:length(q(1,:))
+                diffq = q(:,i)-last;
+                for j=1:length(diffq)
+                    diffq(j)=inpi(diffq(j));
+                end
+                if norm(diffq)<sm
+                    sm=norm(diffq);
+                    qi=i;
+                end
             end
-            if norm(diffq)<sm
-                sm=norm(diffq);
-                qi=i;
-            end
-        end
-        qans = q(:,qi);
-    else
-        for i=1:length(q(1,:))
-            if q(4,i)<=pi/2 && q(4,i)>=-pi/2
-                qans = q(:,i);
-                break;
+            qans = q(:,qi);
+        else
+            for i=1:length(q(1,:))
+                if q(4,i)<=pi/2 && q(4,i)>=-pi/2
+                    qans = q(:,i);
+                    break;
+                end
             end
         end
     end
