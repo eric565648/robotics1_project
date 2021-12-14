@@ -1,25 +1,34 @@
 % initialization
  close all;
-%  clear all;
+% clear all;
 
 oarbot_param;
 
 kinova_param;
 
-dataN=1000;
+dataN=1;
 paramM=[];
+
+plotvel = [];
 
 i=1;
 while i<=dataN
 
-    sr = rand*0.35 + 0.3;stheta = rand*deg2rad(150)-deg2rad(60);
-    sp = rand*deg2rad(180)-deg2rad(90);sh = rand*0.3; shand=rand;
-    er = rand*0.35 + 0.3;etheta = rand*deg2rad(150)-deg2rad(60);
-    ep = rand*deg2rad(180)-deg2rad(90);eh = rand*0.3; ehand=rand;
-    exp_r = rand-2;
-    arm_speed = rand-2;
-    vel_type=randi([1,6]);
-    base_speed=rand*2-2;
+%     sr = rand*0.35 + 0.3;stheta = rand*deg2rad(150)-deg2rad(60);
+%     sp = rand*deg2rad(180)-deg2rad(90);sh = rand*0.3; shand=rand;
+%     er = rand*0.35 + 0.3;etheta = rand*deg2rad(150)-deg2rad(60);
+%     ep = rand*deg2rad(180)-deg2rad(90);eh = rand*0.3; ehand=rand;
+%     exp_r = rand-2;
+%     arm_speed = rand-2;
+%     vel_type=randi([1,6]);
+%     base_speed=rand*2-2;
+    
+    sr = 0.48; stheta=deg2rad(0);
+    er = 0.5; etheta=deg2rad(60);
+    exp_r = -2;
+    arm_speed=-1;
+    base_speed=-2;
+    vel_type=1;
 
 %     disp([sr stheta sp sh])
 %     disp([er etheta ep eh])
@@ -30,20 +39,37 @@ while i<=dataN
 
     if ~isempty(path)
 %         tic
-%         for k=1:length(path(1,:))
-%             qbot=path(1:end-1,k);
-%             figure(1);show(robot_tree,qbot,'collision','on','PreservePlot',0,'FastUpdate',1);
-%             view(43,16);axis([0 10 -0.5 0.5 0 2]);
-%         end
+        for k=1:length(path(1,:))
+            qbot=path(1:end-1,k);
+            figure(1);show(robot_tree,qbot,'collision','on','PreservePlot',0,'FastUpdate',1);
+            view(43,16);axis([0 1 -0.5 0.5 0 2]);
+        end
 %         toc
 %         disp(length(path(1,:))*0.02)
         paramM = [paramM;sr,stheta,sp,sh,shand,er,etheta,ep,eh,ehand,exp_r,vel_type,arm_speed,base_speed];
         writematrix(path,'motion_data_test/'+string(i)+'.csv');
         fprintf('Number %s\n',num2str(i));
+
+%         figure(i);plot(vecnorm(diff(pathp_d')')/0.02);title('Velocity Type '+string(i));
+%         ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
         i=i+1;
+%         plotvel = [plotvel;vecnorm(diff(pathp_d')')/0.02];
     end
 end
 writematrix(paramM,'motion_data/data_param.csv');
+
+% figure(1);plot(plotvel(1,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
+% figure(2);plot(plotvel(2,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
+% figure(3);plot(plotvel(3,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
+% figure(4);plot(plotvel(4,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
+% figure(5);plot(plotvel(5,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
+% figure(6);plot(plotvel(6,:));title('Velocity Type 1');
+% ylabel('Path Speed m/s'); xlabel('Time Index'); grid;
 
 function [path,pathp_d,pathq_d] = create_path(robot,armbot,sr,stheta,sp,sh,shand,er,etheta,ep,eh,ehand,exp_r,vel_type,arm_speed,base_speed)
 
