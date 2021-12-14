@@ -107,4 +107,8 @@ plt.ylabel("Score")
 plt.show(block=False)
 
 # save standardize coefficient for motion sampling
-print(param_dataset_scaler.mean_,param_dataset_scaler.scale_)
+save_learned_coeff = np.array([param_dataset_scaler.mean_,param_dataset_scaler.scale_,reg.coef_])
+np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff.csv', save_learned_coeff, delimiter=',')
+np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff_intercept.csv', np.array([reg.intercept_]),delimiter=',')
+np.savetxt('/media/eric/Transcend/motion_lib/motion_data/train_data.csv',train_data,delimiter=',')
+np.savetxt('/media/eric/Transcend/motion_lib/motion_data/test_data.csv',test_data,delimiter=',')
