@@ -19,7 +19,7 @@ class MData:
         self.rate=rate
 
 # show rank
-with open('/media/eric/Transcend/motion_lib/motion_data/rank.npy','rb') as f:
+with open('../data/rank.npy','rb') as f:
     rank = np.load(f,allow_pickle=True)
 
 for r in range(len(rank)):
