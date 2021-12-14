@@ -21,11 +21,11 @@ class MData:
         self.rate=rate
 
 # read rank
-with open('/media/eric/Transcend/motion_lib/motion_data/rank.npy','rb') as f:
+with open('../data/rank.npy','rb') as f:
     rank = np.load(f,allow_pickle=True)
 
 # read param
-param=np.genfromtxt('/media/eric/Transcend/motion_lib/motion_data/data_param_new.csv',delimiter=',',dtype=float)
+param=np.genfromtxt('../data/data_param_new.csv',delimiter=',',dtype=float)
 
 # copy the read parameters to new variables
 param_dataset = dp(param)
@@ -108,7 +108,8 @@ plt.show(block=False)
 
 # save standardize coefficient for motion sampling
 save_learned_coeff = np.array([param_dataset_scaler.mean_,param_dataset_scaler.scale_,reg.coef_])
-np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff.csv', save_learned_coeff, delimiter=',')
-np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff_intercept.csv', np.array([reg.intercept_]),delimiter=',')
-np.savetxt('/media/eric/Transcend/motion_lib/motion_data/train_data.csv',train_data,delimiter=',')
-np.savetxt('/media/eric/Transcend/motion_lib/motion_data/test_data.csv',test_data,delimiter=',')
+# np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff.csv', save_learned_coeff, delimiter=',')
+# np.savetxt('/media/eric/Transcend/motion_lib/motion_data/learn_coeff_intercept.csv', np.array([reg.intercept_]),delimiter=',')
+# np.savetxt('/media/eric/Transcend/motion_lib/motion_data/train_data.csv',train_data,delimiter=',')
+# np.savetxt('/media/eric/Transcend/motion_lib/motion_data/test_data.csv',test_data,delimiter=',')
+print(save_learned_coeff)
