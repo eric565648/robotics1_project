@@ -14,6 +14,16 @@
 	<xacro:property name="wheel_offset_z" value="0.0" />
 
 	<xacro:macro name="robot">
+		<link name="world"/>
+  
+		<joint name="connect_base_and_world" type="prismatic">
+			<child link="summit_base_footprint" />
+			<parent link="world" />
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<axis xyz="1 0 0"/>
+			<limit effort="1000.0" lower="-100" upper="100" velocity="1000"/>
+		</joint> 
+
 		<xacro:summit_base/>
 
 		<xacro:omni_wheel prefix="summit_front_right" parent="summit_base_link" reflect="false">

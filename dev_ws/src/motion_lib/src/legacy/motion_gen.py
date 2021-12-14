@@ -16,7 +16,7 @@ class Motion(object):
         super().__init__()
 
         # parameters
-        self.c_rate = 0.01
+        self.c_rate = 0.1
         self.joint_vel_limit = np.deg2rad(np.array([36,36,36,48,48,48]))
         self.motion_T = 5
         self._n = 10
@@ -54,12 +54,21 @@ class Motion(object):
 
         param = np.array([sr,stheta,sp,sy,sh,er,etheta,ep,ey,eh,exp_rate,exp_r,vel_type,arm_speed,base_speed])
 
-        path = self.create_path(param)
-        self.viz_path(path)
+        path = np.zeros((10,100))
+        s1 = -0.54
+        s2 = 1.88
+        e1 = 0.5
+        e2 = -1.66
+        for i in range(100):
+            path[:,i] = np.array([0,0,0,0,0,0,0,(e1-s1)*i/100+s1,(e2-s2)*i/100+s2,0])
+            
 
-        # for i in range(len(path)):
-        #     self.robot_fwd(np.reshape(path[:,i],(self._n,)))
-        #     rospy.sleep(self.c_rate)
+        # path = self.create_path(param)
+        # self.viz_path(path)
+
+        for i in range(len(path[1,:])):
+            self.robot_fwd(np.reshape(path[:,i],(self._n,)))
+            rospy.sleep(self.c_rate)
 
         return TriggerResponse(
             success=True,
