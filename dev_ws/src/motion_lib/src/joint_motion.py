@@ -19,7 +19,7 @@ def inpi(angles):
     return angles_inpi
 
 class JointControl:
-    def __init__(self) -> None:
+    def __init__(self):
         
         # parameters
         self.vel_rate = 100
