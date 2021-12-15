@@ -19,11 +19,11 @@ class MData:
     def set_rate(self,rate):
         self.rate=rate
 
-SETSIZE=1000
-COMPNUM_1=5
+SETSIZE=5
+COMPNUM_1=4
 COMPNUM_2=5
 COMPNUM_3=10
-COMPNUM=[5,5,10]
+COMPNUM=[4,5,10]
 
 toyset = []
 compset = []
@@ -36,7 +36,7 @@ for i in range(SETSIZE):
 compset = dp(toyset)
 
 
-for rt in [0,1,2]:
+for rt in [0]:
     print('Round',rt+1)
 
     # Round Start
@@ -65,7 +65,8 @@ for rt in [0,1,2]:
                     # print("cpnum",cpnum)
                     # print("i",i)
                     if cpnum != i:
-                        break
+                        if not cpnum in compset[i].comp:
+                            break
                 if len(compset[cpnum].comp)<COMPNUM[rt]:
                     # set competitor
                     compset[i].set_comp(cpnum)
@@ -98,10 +99,17 @@ for rt in [0,1,2]:
     #     comptime[cp['p2']] += 1
     # print(comptime)
 
+    shuford=np.arange(len(cporder))
+    np.random.shuffle(shuford)
+    cporder_shuffle=dp(cporder)
+    for shufi in range(len(shuford)):
+        cporder_shuffle[shufi] = cporder[shuford[shufi]]
+
     # compare using TrueSkill
-    for cp in cporder:
+    for cp in cporder_shuffle:
         p1=cp['p1']
         p2=cp['p2']
+        print("p1,p2:",p1,p2)
         if compset[p1].score>compset[p2].score:
             nr1,nr2=tk.rate_1vs1(compset[p1].rate,compset[p2].rate)
         else:
@@ -139,6 +147,6 @@ for rt in [0,1,2]:
         rank[0:int(SETSIZE/4)]=dp(this_rank)
     
 # show rank
-# for r in range(len(rank)):
-#     print("Rank",r+1,"Num:",rank[r].num,"Mu:",rank[r].rate.mu,"GT:",rank[r].score)
-# print("Total:",len(rank))
+for r in range(len(rank)):
+    print("Rank",r+1,"Num:",rank[r].num,"Mu:",rank[r].rate.mu,"GT:",rank[r].score)
+print("Total:",len(rank))

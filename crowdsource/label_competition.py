@@ -110,7 +110,7 @@ for rt in [0,1,2]:
     #     print("p1:",cp['p1'],",p2:",cp['p2'])
     shuford=np.arange(len(cporder))
     np.random.shuffle(shuford)
-    cporder_shuffle=cporder
+    cporder_shuffle=dp(cporder)
     for shufi in range(len(shuford)):
         cporder_shuffle[shufi] = cporder[shuford[shufi]]
     # for cp in cporder_shuffle:
@@ -118,7 +118,7 @@ for rt in [0,1,2]:
 
     # compare and apply TrueSkill
     cporder_count=0
-    for cp in cporder:
+    for cp in cporder_shuffle:
         counter += 1
         cporder_count += 1
         p1=cp['p1']

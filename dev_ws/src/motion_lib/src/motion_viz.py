@@ -23,6 +23,10 @@ class Motion(object):
         self.wheel_r = 0.127
         self.hand_size=1.25
 
+        self.dataN = rospy.get_param("data_num",5)
+        self.file_folder = rospy.get_param("motion_folder","/media/eric/Transcend/motion_lib/happy_motion_50/")
+        self.record = rospy.get_param("record",True)
+
         # variables
         self.oarbot = Oarbot()
         self.joint_msg = None
@@ -51,7 +55,7 @@ class Motion(object):
 
     def motion_srv_cb(self, req):
 
-        dataN=2
+        dataN=5
         play_t=1
 
         # # display screen resolution, get it from your OS settings
@@ -63,11 +67,12 @@ class Motion(object):
 
         for i in range(dataN):
             print("Path:",i+1)
-            path=np.genfromtxt('/media/eric/Transcend/motion_lib/motion_data_test/'+str(i+1)+'.csv',delimiter=',',dtype=float)
+            path=np.genfromtxt(self.file_folder+str(i+1)+'.csv',delimiter=',',dtype=float)
             
-            while not rospy.get_param('record_flag'):
-                rospy.sleep(0.1)
-            self.rec_trigger.publish('/media/eric/Transcend/motion_lib/motion_data_test/'+str(i+1))
+            if self.record:
+                while not rospy.get_param('record_flag'):
+                    rospy.sleep(0.1)
+            self.rec_trigger.publish(self.file_folder+str(i+1))
             # rospy.sleep(0.5)
             for t in range(play_t):
                 for p in path.T:
