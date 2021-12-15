@@ -55,6 +55,27 @@ class JointControl:
 
         path=np.genfromtxt(self.file_folder+str(1)+'.csv',delimiter=',',dtype=float)
 
+        # move to starting pose
+        start_q = path[4:10,0]
+        start_q[0] *= -1
+        start_q += self.j_zeros
+        while True:
+            last_estimate = np.array(self.joint_state.position[0:6])
+            dx = np.rad2deg(inpi(start_q-last_estimate))
+            if np.sum(dx) < 0.01:
+                break
+            vel_d = self.Kp*(dx)
+            vel_msg = JointVelocity()
+            vel_msg.joint1 = vel_d[0]
+            vel_msg.joint2 = vel_d[1]
+            vel_msg.joint3 = vel_d[2]
+            vel_msg.joint4 = vel_d[3]
+            vel_msg.joint5 = vel_d[4]
+            vel_msg.joint6 = vel_d[5]
+            self.vel_pub.publish(vel_msg)
+
+            self.vel_rate_.sleep()
+
         change_num = self.vel_rate/self.waypoint_rate
         change_count = 0
         path_i = 0
