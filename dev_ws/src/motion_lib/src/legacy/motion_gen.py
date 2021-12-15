@@ -172,7 +172,7 @@ class Motion(object):
             # print("qd",qd)
             print("arm_q",arm_q)
             print("====")
-            sup_h = (eh-sh)/N*i
+            sup_h = (eh-sh)/N*i+sh
             bx = ebx/N*i
             q = np.append([bx,0,0,sup_h],arm_q)
             # print("ans",arm_q)
