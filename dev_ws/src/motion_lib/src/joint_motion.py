@@ -64,7 +64,7 @@ class JointControl:
             this_target[0] *= -1
             this_target += self.j_zeros
             last_estimate = np.array(self.joint_state.position[0:6])
-            dx = inpi(this_target-last_estimate)
+            dx = np.rad2deg(inpi(this_target-last_estimate))
             vel_d = self.Kp*(dx)
             vel_msg = JointVelocity()
             vel_msg.joint1 = vel_d[0]
