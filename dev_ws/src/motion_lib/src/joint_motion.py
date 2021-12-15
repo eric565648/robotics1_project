@@ -2,7 +2,7 @@
 import rospy
 import numpy as np
 from kinova_msgs.msg import JointVelocity
-from sensor_msgs import JointState
+from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger, TriggerResponse
 from math import pi
 
