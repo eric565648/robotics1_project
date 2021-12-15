@@ -26,7 +26,7 @@ class JointControl:
         self.vel_rate_ = rospy.Rate(self.vel_rate)
         self.file_folder = "/home/oarbot_silver/eric/robotics1_project/data/happy_motion_100/"
         
-        self.waypoint_rate = 50
+        self.waypoint_rate = 10
         self.Kp = 1./self.waypoint_rate
 
         self.j_zeros = np.array([pi,pi,pi/2,0,0,0])
