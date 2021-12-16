@@ -5,6 +5,7 @@ from kinova_msgs.msg import JointVelocity
 from sensor_msgs.msg import JointState
 from std_srvs.srv import Trigger, TriggerResponse
 from math import pi
+from copy import deepcopy as dp
 
 def inpi(angles):
     angles_inpi = np.zeros(len(angles))
@@ -55,16 +56,22 @@ class JointControl:
 
         path=np.genfromtxt(self.file_folder+str(1)+'.csv',delimiter=',',dtype=float)
 
+        print(len(path[1,:]))
         # move to starting pose
         start_q = path[4:10,0]
         start_q[0] *= -1
         start_q += self.j_zeros
+        print(start_q)
+        last_estimate = np.array(self.joint_state.position[0:6])
+        print(last_estimate)
+        print(np.rad2deg(inpi(start_q-last_estimate)))
         while True:
             last_estimate = np.array(self.joint_state.position[0:6])
             dx = np.rad2deg(inpi(start_q-last_estimate))
-            if np.sum(dx) < 0.01:
+            if np.sum(np.abs(dx)) < 5:
                 break
-            vel_d = self.Kp*(dx)
+            #vel_d = self.Kp*(dx)
+            vel_d = 10*dx
             vel_msg = JointVelocity()
             vel_msg.joint1 = vel_d[0]
             vel_msg.joint2 = vel_d[1]
@@ -76,12 +83,16 @@ class JointControl:
 
             self.vel_rate_.sleep()
 
+        print("Ready to start")
+        rospy.sleep(5)
+
+
         change_num = self.vel_rate/self.waypoint_rate
         change_count = 0
         path_i = 0
         last_vel = 0
         while True:
-            this_target = path[4:10,path_i]
+            this_target = dp(path[4:10,path_i])
             this_target[0] *= -1
             this_target += self.j_zeros
             last_estimate = np.array(self.joint_state.position[0:6])
@@ -105,6 +116,7 @@ class JointControl:
             
             self.vel_rate_.sleep()
         
+        print("Trajectory done")
         return TriggerResponse(
             success=True,
             message="Trajectory Following done")
