@@ -39,9 +39,6 @@ class Motion(object):
         self.fwd_sub = rospy.Subscriber("oarbot_joints",OarbotJointState,self.robot_fwd_cb,queue_size=1)
         
         self.joint_pub = rospy.Publisher("to_joint_states",JointState,queue_size=1)
-        self.base_pose_pub = rospy.Publisher("oarbot_base_pose",PoseStamped,queue_size=1)
-        self.path_pub = rospy.Publisher("path_markers",MarkerArray,queue_size=1)
-        self.pathd_pub = rospy.Publisher("pathd_markers",MarkerArray,queue_size=1)
 
         self.rec_trigger = rospy.Publisher("screen_record",String,queue_size=1)
 
@@ -58,28 +55,15 @@ class Motion(object):
         dataN=5
         play_t=1
 
-        # # display screen resolution, get it from your OS settings
-        # SCREEN_SIZE = (1920, 1080)
-        # # define the codec
-        # fourcc = cv2.VideoWriter_fourcc(*"XVID")
-        # # create the video write object
-        # out = cv2.VideoWriter("output.avi", fourcc, 20.0, (SCREEN_SIZE))
-
         for i in range(dataN):
             print("Path:",i+1)
             path=np.genfromtxt(self.file_folder+str(i+1)+'.csv',delimiter=',',dtype=float)
             
-            if self.record:
-                while not rospy.get_param('record_flag'):
-                    rospy.sleep(0.1)
-            self.rec_trigger.publish(self.file_folder+str(i+1))
             # rospy.sleep(0.5)
             for t in range(play_t):
                 for p in path.T:
                     self.robot_fwd(p)
                     self.s_rate_.sleep()
-                rospy.sleep(0.2)
-                rospy.set_param('record_switch', False)
 
         return TriggerResponse(
             success=True,
@@ -126,30 +110,10 @@ class Motion(object):
             joint_array[2:6] = [diffw,diffw,diffw,diffw]
 
             joint_msg.position = tuple(joint_array)
-            # base_msg = PoseStamped()
-            # base_msg.pose.position.x = q[0]
-            # base_msg.pose.position.y = q[1]
-            # qua = rox.rot2q(self.oarbot.bot.H[:,2],q[2])
-            # base_msg.pose.orientation.w = qua[0]
-            # base_msg.pose.orientation.x = qua[1]
-            # base_msg.pose.orientation.y = qua[2]
-            # base_msg.pose.orientation.z = qua[3]
             
             joint_msg.header.stamp = rospy.Time.now()
             # base_msg.header.stamp = joint_msg.header.stamp
             self.joint_pub.publish(joint_msg)
-
-            # tr = TransformStamped()
-            # tr.header = joint_msg.header
-            # tr.header.frame_id = "world"
-            # tr.child_frame_id = "summit_base_link"
-            # tr.transform.translation.x = base_msg.pose.position.x
-            # tr.transform.translation.y = base_msg.pose.position.y
-            # tr.transform.translation.z = base_msg.pose.position.z
-            # tr.transform.rotation = base_msg.pose.orientation
-            # self.br.sendTransform(tr)
-
-            # self.base_pose_pub.publish(base_msg)
 
             self.now_q = q
 
